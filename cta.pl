@@ -37,13 +37,14 @@ print "<textarea rows='10' cols='80' name='text'></textarea><br/>\n";
 print "<input type='submit'/>\n";
 print "</form>\n";
 
-my $query = $db->prepare("SELECT id, name, text, date FROM cta ORDER BY date DESC");
+my $query = $db->prepare("SELECT id, name, text, date, rating FROM cta ORDER BY date DESC");
 $query->execute();
 
 while(my @row = $query->fetchrow_array) {
     print "<p>\n";
     print "<u>\#$row[0]</u> by $row[1] at $row[3]<br/>\n";
     print "<pre>$row[2]</pre>\n";
+    print "<small><i>Rated $row[4]</i> (up/down)</small>";
     print "</p>\n";
 }
 
