@@ -17,6 +17,9 @@ my $db = DBI->connect("dbi:SQLite:dbname=$dbfile", "", "")
 print header;
 
 if($name && $text) {
+    $name = escapeHTML($name);
+    $text = escapeHTML($text);
+
     # 'date' should be 'time'. I DON'T GIVE A FUCK.
     # FUCK OFF
     # IT'S TOO MUCH WORK TO CHANGE IT
