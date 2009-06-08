@@ -11,12 +11,19 @@ my $dbfile = 'cta.sqlite';
 my $name = param('name');
 my $text = param('text');
 
+my $id   = url_param('id');
+my $op   = url_param('op');
+
+
 my $db = DBI->connect("dbi:SQLite:dbname=$dbfile", "", "") 
     or die "Couldn't connect to db: $DBI::errstr";
 
 print header;
 
-if($name && $text) {
+if($id && $op) {
+    my $operator = ($op eq "up") ? "+" : "-";
+    my $rows_affected = $db->do("UPDATE cta SET rating = rating $operator 1 WHERE id = '$id'");
+} elsif($name && $text) {
     $name = escapeHTML($name);
     $text = escapeHTML($text);
 
@@ -44,10 +51,13 @@ my $query = $db->prepare("SELECT id, name, text, date, rating FROM cta ORDER BY 
 $query->execute();
 
 while(my @row = $query->fetchrow_array) {
+    my $up_url = url(-full => 1) . "?id=$row[0]&op=up";
+    my $down_url = url(-full => 1) . "?id=$row[0]&op=down";
+
     print "<p>\n";
     print "<u>\#$row[0]</u> by $row[1] at $row[3]<br/>\n";
     print "<pre>$row[2]</pre>\n";
-    print "<small><i>Rated $row[4]</i> (up/down)</small>";
+    print "<small><i>Rated $row[4]</i> (<a href='$up_url'>up</a>/<a href='$down_url'>down</a>)</small>";
     print "</p>\n";
 }
 
