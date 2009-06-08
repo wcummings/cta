@@ -13,7 +13,7 @@ my $text = param('text');
 
 my $id   = url_param('id');
 my $op   = url_param('op');
-
+my $order = url_param('order');
 
 my $db = DBI->connect("dbi:SQLite:dbname=$dbfile", "", "") 
     or die "Couldn't connect to db: $DBI::errstr";
@@ -47,12 +47,20 @@ print "<textarea rows='10' cols='80' name='text'></textarea><br/>\n";
 print "<input type='submit'/>\n";
 print "</form>\n";
 
-my $query = $db->prepare("SELECT id, name, text, date, rating FROM cta ORDER BY date DESC");
+my $order_by = ($order eq "rating") ? "rating" : "date";
+my $query = $db->prepare("SELECT id, name, text, date, rating FROM cta ORDER BY $order_by DESC");
 $query->execute();
 
+my $url = url(-full => 1);
+print "Order by <a href='$url'>date</a> / <a href='$url?order=rating'>rating</a><br/>";
+
 while(my @row = $query->fetchrow_array) {
-    my $up_url = url(-full => 1) . "?id=$row[0]&op=up";
-    my $down_url = url(-full => 1) . "?id=$row[0]&op=down";
+    my $o = "";
+
+    $o = "&order=rating" if ($order eq "rating");
+
+    my $up_url = $url . "?id=$row[0]&op=up$o";
+    my $down_url = $url . "?id=$row[0]&op=down$o";
 
     print "<p>\n";
     print "<u>\#$row[0]</u> by $row[1] at $row[3]<br/>\n";
