@@ -7,10 +7,8 @@ use strict;
 # Config
 my $nargs = @ARGV;
 my $dbfile = 'cta.sqlite';
+my $per_pg = 30;
 
-if($nargs > 0) {
-    $dbfile = $ARGV[0];
-}
 my $db = DBI->connect("dbi:SQLite:dbname=$dbfile", "", "") 
     or die "Couldn't connect to db: $DBI::errstr";
 
@@ -23,7 +21,8 @@ while (new CGI::Fast) {
     my $op    = url_param('op');
     my $order = url_param('order');
     my $view  = url_param('view');
-    
+    my $page  = url_param('pg');
+
     print header;
 
     if($id && $op) {
@@ -61,27 +60,50 @@ while (new CGI::Fast) {
 	$query->execute($view);
     } else {
 	my $order_by = ($order eq "rating") ? "rating" : "date";
-	$query = $db->prepare("SELECT id, name, text, date, rating FROM cta ORDER BY $order_by DESC");
-	$query->execute();
+	$query = $db->prepare("SELECT id, name, text, date, rating FROM cta ORDER BY $order_by DESC LIMIT $per_pg OFFSET ?");
+	$query->execute($page * $per_pg);
     }
-    
-    my $url = url(-full => 1);
+
+    my $url = url(-full => 1);    
     print "Order by <a href='$url'>date</a> / <a href='$url?order=rating'>rating</a><br/>" if not $view;
-    
+
+    my $prev_pg = $page;
+    $prev_pg-- if $prev_pg > 0;
+    my $prev_url = $url . "?pg=$prev_pg";
+    my $next_pg = $page + 1;
+    my $next_url = $url . "?pg=$next_pg";
+
+    my @rows;
     while(my @row = $query->fetchrow_array) {
+	push @rows, \@row;
+    }
+
+    if(@rows < $per_pg) {
+	print "<a href='$prev_url'>prev</a> | next<br>\n";
+    } else {
+	print "<a href='$prev_url'>prev</a> | <a href='$next_url'>next</a><br>\n";
+    }
+
+    foreach my $row (@rows) {
 	my $o = "";
 	
 	$o = "&order=rating" if ($order eq "rating");
 	
-	my $up_url = $url . "?id=$row[0]&op=up$o";
-	my $down_url = $url . "?id=$row[0]&op=down$o";
-	my $view_url = $url . "?view=$row[0]";
+	my $up_url = $url . "?pg=$page&id=$row->[0]&op=up$o";
+	my $down_url = $url . "?pg=$page&id=$row->[0]&op=down$o";
+	my $view_url = $url . "?view=$row->[0]";
 	
 	print "<p>\n";
-	print "<a href='$view_url'>\#$row[0]</a> by $row[1] at $row[3]<br/>\n";
-	print "<pre>$row[2]</pre>\n";
-	print "<small><i>Rated $row[4]</i> (<a href='$up_url'>up</a>/<a href='$down_url'>down</a>)</small>";
+	print "<a href='$view_url'>\#$row->[0]</a> by $row->[1] at $row->[3]<br/>\n";
+	print "<pre>$row->[2]</pre>\n";
+	print "<small><i>Rated $row->[4]</i> (<a href='$up_url'>up</a>/<a href='$down_url'>down</a>)</small>";
 	print "</p>\n";
+    }
+
+    if(@rows < $per_pg) {
+	print "<a href='$prev_url'>prev</a> | next<br>\n";
+    } else {
+	print "<a href='$prev_url'>prev</a> | <a href='$next_url'>next</a><br>\n";
     }
     
     print "</body>\n";
