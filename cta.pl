@@ -78,7 +78,7 @@ while (new CGI::Fast) {
 	push @rows, \@row;
     }
 
-    if(@rows < $per_pg) {
+    if(@rows < $per_pg && not $view) {
 	print "<a href='$prev_url'>prev</a> | next<br>\n";
     } else {
 	print "<a href='$prev_url'>prev</a> | <a href='$next_url'>next</a><br>\n";
@@ -100,7 +100,7 @@ while (new CGI::Fast) {
 	print "</p>\n";
     }
 
-    if(@rows < $per_pg) {
+    if(@rows < $per_pg && not $view) {
 	print "<a href='$prev_url'>prev</a> | next<br>\n";
     } else {
 	print "<a href='$prev_url'>prev</a> | <a href='$next_url'>next</a><br>\n";
