@@ -25,7 +25,8 @@ while (new CGI::Fast) {
 
     if($id && $op) {
         my $operator = ($op eq "up") ? "+" : "-";
-        my $rows_affected = $db->do("UPDATE cta SET rating = rating $operator 1 WHERE id = '$id'");
+        my $query = $db->prepare("UPDATE cta SET rating = rating $operator WHERE id = ?");
+        $query->execute($id);
     } elsif($name && $text) {
         $name = escapeHTML($name);
         $text = escapeHTML($text);
